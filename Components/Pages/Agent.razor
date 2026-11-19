@@ -1,0 +1,87 @@
+@page "/agent"
+@rendermode InteractiveServer
+@using AI4SchoolAgent.Services
+@inject AgentService AgentService
+
+<PageTitle>AI Student Agent</PageTitle>
+
+<h3>AI Student Agent</h3>
+
+<div class="mb-3">
+    <label class="form-label">Select AI Model</label>
+
+    <select class="form-select" @bind="selectedModel"
+            disabled="@isLoading">
+        <option value="auto">Auto (Default)</option>
+
+        @foreach (var model in models)
+        {
+            <option value="@model">@model</option>
+        }
+    </select>
+</div>
+
+<div class="mb-3">
+    <textarea class="form-control"
+              rows="3"
+              placeholder="Ask a question about students..."
+              @bind="question">
+    </textarea>
+</div>
+
+<button class="btn btn-primary"
+        @onclick="AskQuestion"
+        disabled="@isLoading">
+    @(isLoading ? "Thinking..." : "Ask AI")
+</button>
+
+@if (!string.IsNullOrEmpty(answer))
+{
+    <div class="alert alert-info mt-3"
+         style="white-space: pre-wrap;">@answer</div>
+}
+
+@code {
+    private string question = "";
+    private string answer = "";
+    private string selectedModel = "auto";
+    private bool isLoading;
+    private List<string> models = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            models = (await AgentService.GetModelsAsync())
+                .Where(m => m != "auto")
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            answer = $"Error loading models: {ex.Message}";
+        }
+    }
+
+    private async Task AskQuestion()
+    {
+        if (string.IsNullOrWhiteSpace(question))
+            return;
+
+        isLoading = true;
+        answer = "";
+
+        try
+        {
+            answer = await AgentService.AskAsync(
+                question, selectedModel);
+        }
+        catch (Exception ex)
+        {
+            answer = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
