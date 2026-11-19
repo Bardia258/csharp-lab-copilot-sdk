@@ -37,18 +37,20 @@ public class AgentService
 
         var models = await client.ListModelsAsync();
 
-        Console.WriteLine("Available models:");
+        var modelIds = models.Select(m => m.Id).ToList();
 
-        foreach (var model in models)
+        Console.WriteLine($"Available models: {modelIds.Count}");
+
+        foreach (var model in modelIds)
         {
-            Console.WriteLine($"{model.Id} - {model.Name}");
+            Console.WriteLine(model);
         }
 
-        return models.Select(m => m.Id).ToList();
+        return modelIds;
     }
 
     public async Task<string> AskAsync(
-        string question, string model = "auto")
+        string question, string model)
     {
         await using var client = CreateClient();
         await client.StartAsync();

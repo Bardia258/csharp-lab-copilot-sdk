@@ -10,14 +10,15 @@
 <div class="mb-3">
     <label class="form-label">Select AI Model</label>
 
-    <select class="form-select" @bind="selectedModel"
+    <select class="form-select"
+            @bind="selectedModel"
             disabled="@isLoading">
-        <option value="auto">Auto (Default)</option>
 
         @foreach (var model in models)
         {
             <option value="@model">@model</option>
         }
+
     </select>
 </div>
 
@@ -31,7 +32,7 @@
 
 <button class="btn btn-primary"
         @onclick="AskQuestion"
-        disabled="@isLoading">
+        disabled="@(isLoading || models.Count == 0)">
     @(isLoading ? "Thinking..." : "Ask AI")
 </button>
 
@@ -44,7 +45,7 @@
 @code {
     private string question = "";
     private string answer = "";
-    private string selectedModel = "auto";
+    private string selectedModel = "";
     private bool isLoading;
     private List<string> models = new();
 
@@ -52,9 +53,15 @@
     {
         try
         {
-            models = (await AgentService.GetModelsAsync())
-                .Where(m => m != "auto")
-                .ToList();
+            models = await AgentService.GetModelsAsync();
+
+            // Use Auto only if the SDK returns no models
+            if (models.Count == 0)
+            {
+                models.Add("auto");
+            }
+
+            selectedModel = models.First();
         }
         catch (Exception ex)
         {
